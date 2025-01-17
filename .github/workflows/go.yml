@@ -124,14 +124,14 @@ jobs:
 
       - name: Set up Git
         run: |
-          git config user.name "manisankar-divi"
-          git config user.email "manisankar-divi@gmail.com"
+          git config user.name "Your Name"
+          git config user.email "youremail@example.com"
 
-      - name: Get Current Date and Find Existing Tags
+      - name: Get Current Date and Increment Version
         id: version
         run: |
           VERSION_DATE=$(date +'%Y.%m.%d')
-          # Find the highest tag for the current date
+          # Find the latest tag for the current day
           TAGS=$(git tag -l "v$VERSION_DATE*")
           MAX_TAG=0
           for TAG in $TAGS; do
@@ -141,7 +141,7 @@ jobs:
               MAX_TAG=$TAG_SUFFIX
             fi
           done
-          # Increment the version number
+          # Increment the version number for this commit
           NEW_TAG="v$VERSION_DATE.$((MAX_TAG + 1))"
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
 
@@ -150,7 +150,7 @@ jobs:
           echo "Creating release for tag: $NEW_TAG"
           git tag "$NEW_TAG"
           git push origin "$NEW_TAG"
-          # Explicitly setting release name and tag name
+          # Create the release for the new tag
           gh release create "$NEW_TAG" --title "$NEW_TAG" --notes "Release $NEW_TAG" --target "main"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
