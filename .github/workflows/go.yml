@@ -86,7 +86,8 @@ jobs:
       - name: Build and push Docker image
         run: |
           docker build -t manisankardivi/new:${{ env.VERSION }} .
-          date
+          FORMATTED_DATE=$(date +v%Y.%m.%d)
+          echo "$FORMATTED_DATE"
           
   release-tag:
     runs-on: ubuntu-latest
