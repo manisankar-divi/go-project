@@ -106,7 +106,6 @@
 #               echo "No changes detected. Skipping version tag creation."
 #               exit 0
 #             fi
-  
 name: Release Pipeline
 
 on:
@@ -145,32 +144,38 @@ jobs:
           NEW_TAG="v$VERSION_DATE.$((MAX_TAG + 1))"
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
 
-      - name: Ensure Tag is Unique and Create Release
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          PRS=$(gh pr list --state=closed --base=main --sort=updated --json title,author,url -L 100)
+          CHANGES="### What's Changed\n"
+          CONTRIBUTORS="### New Contributors\n"
+          
+          for PR in $(echo "$PRS" | jq -r '.[].url'); do
+            PR_TITLE=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].title')
+            PR_AUTHOR=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].author.login')
+            PR_NUMBER=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].number')
+            
+            CHANGES="$CHANGES\n    $PR_TITLE by @$PR_AUTHOR in #$PR_NUMBER"
+            
+            # Track new contributors
+            CONTRIBUTORS_LIST=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].author.login')
+            for CONTRIBUTOR in $CONTRIBUTORS_LIST; do
+              CONTRIBUTORS="$CONTRIBUTORS\n    @$CONTRIBUTOR made their first contribution in #$PR_NUMBER"
+            done
+          done
+          
+          echo -e "$CHANGES" > changelog.txt
+          echo -e "$CONTRIBUTORS" >> changelog.txt
+          cat changelog.txt
+          
+      - name: Create New Tag and Release
         run: |
           echo "Creating release for tag: $NEW_TAG"
-          # Fetch tags from remote
-          git fetch --tags
-          
-          # Check if the tag already exists
-          if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
-            echo "Tag $NEW_TAG already exists. Creating a new tag."
-            # If tag exists, increment the version
-            VERSION_DATE=$(date +'%Y.%m.%d')
-            MAX_TAG=0
-            TAGS=$(git tag -l "v$VERSION_DATE*")
-            for TAG in $TAGS; do
-              TAG_SUFFIX=$(echo $TAG | sed 's/^v[0-9]*\.[0-9]*\.[0-9]*\.//')
-              if [ "$TAG_SUFFIX" -gt "$MAX_TAG" ]; then
-                MAX_TAG=$TAG_SUFFIX
-              fi
-            done
-            NEW_TAG="v$VERSION_DATE.$((MAX_TAG + 1))"
-          fi
-
-          # Create and push the new tag
           git tag "$NEW_TAG"
           git push origin "$NEW_TAG"
-          # Create the release for the new tag
-          gh release create "$NEW_TAG" --title "$NEW_TAG" --notes "Release $NEW_TAG" --target "main"
+          # Use changelog for release notes
+          CHANGELOG=$(cat changelog.txt)
+          gh release create "$NEW_TAG" --title "$NEW_TAG" --notes "$CHANGELOG" --target "main"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
