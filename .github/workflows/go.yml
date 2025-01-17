@@ -150,7 +150,7 @@ jobs:
           echo "Creating release for tag: $NEW_TAG"
           git tag "$NEW_TAG"
           git push origin "$NEW_TAG"
-          gh release create "$NEW_TAG" --title "Release $NEW_TAG" --notes "Release $NEW_TAG" --target "main"
+          # Explicitly setting release name and tag name
+          gh release create "$NEW_TAG" --title "$NEW_TAG" --notes "Release $NEW_TAG" --target "main"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
