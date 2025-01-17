@@ -144,13 +144,26 @@ jobs:
           NEW_TAG="v$VERSION_DATE.$((MAX_TAG + 1))"
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
 
-      - name: Generate Changelog
+      - name: Generate Changelog with File Changes
         id: changelog
         run: |
-          PRS=$(gh pr list --state=closed --base=main --sort=updated --json title,author,url -L 100)
+          # Get the list of changed files between the latest tag and the current commit
+          CHANGED_FILES=$(git diff --name-only $(git describe --tags --abbrev=0)..HEAD)
           CHANGES="### What's Changed\n"
           CONTRIBUTORS="### New Contributors\n"
-          
+
+          # Add file changes to the changelog
+          if [ -n "$CHANGED_FILES" ]; then
+            CHANGES="$CHANGES\n    Files Changed:\n"
+            for FILE in $CHANGED_FILES; do
+              CHANGES="$CHANGES\n    - $FILE"
+            done
+          else
+            CHANGES="$CHANGES\n    No file changes detected."
+          fi
+
+          # List PRs and contributors
+          PRS=$(gh pr list --state=closed --base=main --sort=updated --json title,author,url -L 100)
           for PR in $(echo "$PRS" | jq -r '.[].url'); do
             PR_TITLE=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].title')
             PR_AUTHOR=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].author.login')
