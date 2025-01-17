@@ -106,7 +106,7 @@
 #               echo "No changes detected. Skipping version tag creation."
 #               exit 0
 #             fi
-name: Release Pipeline
+name: Auto Release Pipeline
 
 on:
   push:
@@ -126,69 +126,29 @@ jobs:
           git config user.name "Your Name"
           git config user.email "youremail@example.com"
 
-      - name: Get Current Date and Increment Version
-        id: version
+      - name: Get the latest tag and create new tag
+        id: tag
         run: |
-          VERSION_DATE=$(date +'%Y.%m.%d')
-          # Find the latest tag for the current date
-          TAGS=$(git tag -l "v$VERSION_DATE*")
-          MAX_TAG=0
-          for TAG in $TAGS; do
-            # Extract the suffix after the date
-            TAG_SUFFIX=$(echo $TAG | sed 's/^v[0-9]*\.[0-9]*\.[0-9]*\.//')
-            if [ "$TAG_SUFFIX" -gt "$MAX_TAG" ]; then
-              MAX_TAG=$TAG_SUFFIX
-            fi
-          done
-          # Increment the version number for this commit
-          NEW_TAG="v$VERSION_DATE.$((MAX_TAG + 1))"
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          DATE_TAG=$(date +'%Y.%m.%d')
+          TAG_SUFFIX=${LATEST_TAG#v$DATE_TAG.}
+          NEW_TAG="v$DATE_TAG.$((TAG_SUFFIX + 1))"
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-
-      - name: Generate Changelog with File Changes
-        id: changelog
-        run: |
-          # Get the list of changed files between the latest tag and the current commit
-          CHANGED_FILES=$(git diff --name-only $(git describe --tags --abbrev=0)..HEAD)
-          CHANGES="### What's Changed\n"
-          CONTRIBUTORS="### New Contributors\n"
-
-          # Add file changes to the changelog
-          if [ -n "$CHANGED_FILES" ]; then
-            CHANGES="$CHANGES\n    Files Changed:\n"
-            for FILE in $CHANGED_FILES; do
-              CHANGES="$CHANGES\n    - $FILE"
-            done
-          else
-            CHANGES="$CHANGES\n    No file changes detected."
-          fi
-
-          # List PRs and contributors
-          PRS=$(gh pr list --state=closed --base=main --sort=updated --json title,author,url -L 100)
-          for PR in $(echo "$PRS" | jq -r '.[].url'); do
-            PR_TITLE=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].title')
-            PR_AUTHOR=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].author.login')
-            PR_NUMBER=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].number')
-            
-            CHANGES="$CHANGES\n    $PR_TITLE by @$PR_AUTHOR in #$PR_NUMBER"
-            
-            # Track new contributors
-            CONTRIBUTORS_LIST=$(echo "$PRS" | jq -r --arg pr_url "$PR" 'map(select(.url == $pr_url)) | .[0].author.login')
-            for CONTRIBUTOR in $CONTRIBUTORS_LIST; do
-              CONTRIBUTORS="$CONTRIBUTORS\n    @$CONTRIBUTOR made their first contribution in #$PR_NUMBER"
-            done
-          done
           
-          echo -e "$CHANGES" > changelog.txt
-          echo -e "$CONTRIBUTORS" >> changelog.txt
-          cat changelog.txt
-          
-      - name: Create New Tag and Release
-        run: |
-          echo "Creating release for tag: $NEW_TAG"
+          # Create and push the new tag
           git tag "$NEW_TAG"
           git push origin "$NEW_TAG"
-          # Use changelog for release notes
-          CHANGELOG=$(cat changelog.txt)
-          gh release create "$NEW_TAG" --title "$NEW_TAG" --notes "$CHANGELOG" --target "main"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release for new tag
+        run: |
+          curl -X POST https://api.github.com/repos/${{ github.repository }}/releases \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{
+              "tag_name": "'${{ env.NEW_TAG }}'",
+              "name": "'${{ env.NEW_TAG }}'",
+              "body": "Release notes for changes.",
+              "draft": false,
+              "prerelease": false,
+              "target_commitish": "main"
+            }'
