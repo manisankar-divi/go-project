@@ -28,7 +28,7 @@ jobs:
       - name: Generate Release Notes
         uses: release-drafter/release-drafter@v6
         with:
-          config-name: release.yml
+          config-name: .github/release.yml
 
 # name: CI/CD Pipeline
 
