@@ -17,13 +17,13 @@ jobs:
       - name: Set up Date Version
         id: date_version
         run: |
-          DATE_VERSION=$(date +'%Y.%m.%d')
+          DATE_VERSION=$(date +'v%Y.%m.%d')
           echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
 
       - name: Create a Release
         uses: release-drafter/release-drafter@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Replace with your custom secret here
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Replace with your custom secret
         with:
           tag_name: v${{ steps.date_version.outputs.DATE_VERSION }} # Use dynamic tag based on the date
           release_name: Release v${{ steps.date_version.outputs.DATE_VERSION }}
@@ -33,8 +33,9 @@ jobs:
 
       - name: Generate Release Notes
         uses: release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Replace with your custom secret
         with:
-          token: ${{ secrets.GIT_TOKEN }}  # Pass the token as "with.token"
           config-name: |
             name-template: 'Release v${{ steps.date_version.outputs.DATE_VERSION }}'
             tag-template: 'v${{ steps.date_version.outputs.DATE_VERSION }}'
@@ -65,7 +66,6 @@ jobs:
             
             # Optional: Increment the patch version automatically
             increment-version: true
-
 
             
 # name: CI/CD Pipeline
