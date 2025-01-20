@@ -3,7 +3,7 @@ name: Release and Tag
 on:
   push:
     branches:
-      - main # Adjust to your default branch
+      - main  # Adjust to your default branch
 
 jobs:
   release:
@@ -17,8 +17,9 @@ jobs:
       - name: Set up Date Version
         id: date_version
         run: |
-          DATE_VERSION=$(date +'v%Y.%m.%d')
+          DATE_VERSION=$(date +'%Y.%m.%d')
           echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
+
       - name: Create a Release
         uses: release-drafter/release-drafter@v6
         env:
@@ -27,44 +28,14 @@ jobs:
           tag: v${{ env.DATE_VERSION }}  # Tag for the release (based on the date)
           name: Release v${{ env.DATE_VERSION }}  # Name of the release (based on the date)
           prerelease: false  # Set to false if not a prerelease
-          draft: false  # Set to false if not a draft release
-          commitish: ${{ github.sha }}  #
-          
+          publish: false  # Set to false if you want the release to be a draft
+          commitish: ${{ github.sha }}  # Use the current commit as the reference commit
+
       - name: Generate Release Notes
         uses: release-drafter/release-drafter@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Replace with your custom secret
         with:
-          config-name: |
-            name-template: 'Release v${{ steps.date_version.outputs.DATE_VERSION }}'
-            tag-template: 'v${{ steps.date_version.outputs.DATE_VERSION }}'
-            categories:
-              - title: New Features 🎉
-                labels:
-                  - enhancement
-              - title: Bug Fixes 🐛
-                labels:
-                  - bug
-              - title: Documentation 📚
-                labels:
-                  - documentation
-              - title: Other Changes
-                labels:
-                  - '*'
-            change-template: '- $TITLE (#$NUMBER) @${AUTHOR}'
-            no-changes-template: '- No changes'
-            
-            # Version format: v<Year>.<Month>.<Patch>
-            version-template: 'v${{ steps.date_version.outputs.DATE_VERSION }}'
-            
-            version-resolver:
-              major: { labels: [] }
-              minor: { labels: [] }
-              patch: { labels: [] }
-              default: 'patch'
-            
-            # Optional: Increment the patch version automatically
-            increment-version: true
+          token: ${{ secrets.GIT_TOKEN }}  # Pass the token as "with.token"
+          # No custom configuration file specified, using defaults
 
             
 # name: CI/CD Pipeline
