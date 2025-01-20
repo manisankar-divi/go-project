@@ -23,7 +23,7 @@ jobs:
       - name: Create a Release
         uses: release-drafter/release-drafter@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}  # Replace with your custom secret
         with:
           tag_name: v${{ steps.date_version.outputs.DATE_VERSION }} # Use dynamic tag based on the date
           release_name: Release v${{ steps.date_version.outputs.DATE_VERSION }}
@@ -33,6 +33,8 @@ jobs:
 
       - name: Generate Release Notes
         uses: release-drafter/release-drafter@v6
+        env:
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}  # Replace with your custom secret
         with:
           config-name: |
             name-template: 'Release v${{ steps.date_version.outputs.DATE_VERSION }}'
