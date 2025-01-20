@@ -1,42 +1,46 @@
-name: Release and Tag
+name: Release Drafter
 
 on:
   push:
+    # branches to consider in the event; optional, defaults to all
     branches:
-      - main  # Adjust to your default branch
+      - main
+      - master
+
+  # pull_request event is required only for autolabeler
+  pull_request:
+    # Only following types are handled by the action, but one can default to all as well
+    types: [opened, reopened, synchronize]
+  # pull_request_target event is required for autolabeler to support PRs from forks
+  # pull_request_target:
+  #   types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
 
 jobs:
-  release:
-    name: Create Release
+  update_release_draft:
+    permissions:
+      # write permission is required to create a github release
+      contents: write
+      # write permission is required for autolabeler
+      # otherwise, read permission is required at least
+      pull-requests: write
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      # (Optional) GitHub Enterprise requires GHE_HOST variable set
+      #- name: Set GHE_HOST
+      #  run: |
+      #    echo "GHE_HOST=${GITHUB_SERVER_URL##https:\/\/}" >> $GITHUB_ENV
 
-      - name: Set up Date Version
-        id: date_version
-        run: |
-          DATE_VERSION=$(date +'%Y.%m.%d')
-          echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
-
-      - name: Create a Release
-        uses: release-drafter/release-drafter@v6
+      # Drafts your next Release notes as Pull Requests are merged into "master"
+      - uses: release-drafter/release-drafter@v6
+        # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
+        # with:
+        #   config-name: my-config.yml
+        #   disable-autolabeler: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Use your custom token here
-        with:
-          tag: v${{ env.DATE_VERSION }}  # Tag for the release (based on the date)
-          name: Release v${{ env.DATE_VERSION }}  # Name of the release (based on the date)
-          prerelease: false  # Set to false if not a prerelease
-          publish: false  # Set to false if you want the release to be a draft
-          commitish: ${{ github.sha }}  # Use the current commit as the reference commit
-
-      - name: Generate Release Notes
-        uses: release-drafter/release-drafter@v6
-        with:
-          token: ${{ secrets.GIT_TOKEN }}  # Pass the token as "with.token"
-          # No custom configuration file specified, using defaults
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             
 # name: CI/CD Pipeline
 
