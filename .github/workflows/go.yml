@@ -14,13 +14,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Set up Date Version
+        id: date_version
+        run: |
+          DATE_VERSION=$(date +'%Y.%m.%d')
+          echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
+
       - name: Create a Release
         uses: release-drafter/release-drafter@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ github.run_number }} # Dynamic tag name
-          release_name: Release v${{ github.run_number }}
+          tag_name: v${{ steps.date_version.outputs.DATE_VERSION }} # Use dynamic tag based on the date
+          release_name: Release v${{ steps.date_version.outputs.DATE_VERSION }}
           body_path: changelog.md # Optional if you maintain a changelog file
           draft: false
           prerelease: false
@@ -28,8 +34,38 @@ jobs:
       - name: Generate Release Notes
         uses: release-drafter/release-drafter@v6
         with:
-          config-name: .github/release.yml
+          config-name: |
+            name-template: 'Release v${{ steps.date_version.outputs.DATE_VERSION }}'
+            tag-template: 'v${{ steps.date_version.outputs.DATE_VERSION }}'
+            categories:
+              - title: New Features 🎉
+                labels:
+                  - enhancement
+              - title: Bug Fixes 🐛
+                labels:
+                  - bug
+              - title: Documentation 📚
+                labels:
+                  - documentation
+              - title: Other Changes
+                labels:
+                  - '*'
+            change-template: '- $TITLE (#$NUMBER) @${AUTHOR}'
+            no-changes-template: '- No changes'
+            
+            # Version format: v<Year>.<Month>.<Patch>
+            version-template: 'v${{ steps.date_version.outputs.DATE_VERSION }}'
+            
+            version-resolver:
+              major: { labels: [] }
+              minor: { labels: [] }
+              patch: { labels: [] }
+              default: 'patch'
+            
+            # Optional: Increment the patch version automatically
+            increment-version: true
 
+            
 # name: CI/CD Pipeline
 
 # on:
