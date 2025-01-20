@@ -1,0 +1,24 @@
+# .github/release.yml
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release # Exclude items with this label
+    authors:
+      - Mani Sankar Divi           # Exclude changes made by this author or bot
+  categories:
+    - title: Breaking Changes 🛠
+      labels:
+        - breaking-change   # Include commits labeled as breaking changes
+    - title: New Features 🎉
+      labels:
+        - enhancement       # Include commits labeled as enhancements or new features
+    - title: Bug Fixes 🐛
+      labels:
+        - bug               # Include commits labeled as bug fixes
+    - title: Documentation 📚
+      labels:
+        - documentation     # Include commits related to documentation
+    - title: Other Changes
+      labels:
+        - "*"               # Catch-all category for other changes
