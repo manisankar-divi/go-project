@@ -19,18 +19,17 @@ jobs:
         run: |
           DATE_VERSION=$(date +'v%Y.%m.%d')
           echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
-
       - name: Create a Release
         uses: release-drafter/release-drafter@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Replace with your custom secret
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Use your custom token here
         with:
-          tag_name: v${{ steps.date_version.outputs.DATE_VERSION }} # Use dynamic tag based on the date
-          release_name: Release v${{ steps.date_version.outputs.DATE_VERSION }}
-          body_path: changelog.md # Optional if you maintain a changelog file
-          draft: false
-          prerelease: false
-
+          tag: v${{ env.DATE_VERSION }}  # Tag for the release (based on the date)
+          name: Release v${{ env.DATE_VERSION }}  # Name of the release (based on the date)
+          prerelease: false  # Set to false if not a prerelease
+          draft: false  # Set to false if not a draft release
+          commitish: ${{ github.sha }}  #
+          
       - name: Generate Release Notes
         uses: release-drafter/release-drafter@v6
         env:
