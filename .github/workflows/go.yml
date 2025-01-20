@@ -40,26 +40,26 @@ jobs:
           echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      # Create a release with the dynamically generated version
+      # Create Release with GitHub Token
       - name: Create Release
         uses: release-drafter/release-drafter@v6
         with:
-          config-name: release-drafter.yml  # Custom configuration file if needed
+          config-name: release-drafter.yml
           tag: ${{ env.NEW_VERSION }}  # Use the newly generated version
           name: Release ${{ env.NEW_VERSION }}  # Use the new version in the release name
           prerelease: false
           publish: false  # Keep the release as a draft
           commitish: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass the GitHub token here
 
-      # Generate release notes with categories and change descriptions
+      # Generate Release Notes
       - name: Generate Release Notes
         uses: release-drafter/release-drafter@v6
         with:
-          config-name: release-drafter.yml
-          token: ${{ secrets.GIT_TOKEN }}  # Use your GitHub token for authentication
+          config-name: .github/release-drafter.yml
         env:
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Pass the GitHub token to the environment
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Pass the GitHub token to the environment
 
 
 
