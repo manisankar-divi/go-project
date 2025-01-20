@@ -1,24 +1,19 @@
-# .github/release.yml
-
-changelog:
-  exclude:
+# .github/release.yaml
+name-template: 'Release v$NEXT_PATCH_VERSION'
+tag-template: 'v$NEXT_PATCH_VERSION'
+categories:
+  - title: New Features 🎉
     labels:
-      - ignore-for-release # Exclude items with this label
-    authors:
-      - Mani Sankar Divi           # Exclude changes made by this author or bot
-  categories:
-    - title: Breaking Changes 🛠
-      labels:
-        - breaking-change   # Include commits labeled as breaking changes
-    - title: New Features 🎉
-      labels:
-        - enhancement       # Include commits labeled as enhancements or new features
-    - title: Bug Fixes 🐛
-      labels:
-        - bug               # Include commits labeled as bug fixes
-    - title: Documentation 📚
-      labels:
-        - documentation     # Include commits related to documentation
-    - title: Other Changes
-      labels:
-        - "*"               # Catch-all category for other changes
+      - enhancement
+  - title: Bug Fixes 🐛
+    labels:
+      - bug
+  - title: Documentation 📚
+    labels:
+      - documentation
+  - title: Other Changes
+    labels:
+      - '*'
+change-template: '- $TITLE (#$NUMBER) @${AUTHOR}'
+no-changes-template: '- No changes'
+draft: true
