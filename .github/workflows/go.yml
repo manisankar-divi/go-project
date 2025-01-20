@@ -1,45 +1,60 @@
-name: Release Drafter
+name: Release and Tag
 
 on:
   push:
-    # branches to consider in the event; optional, defaults to all
     branches:
-      - main
-
-  # pull_request event is required only for autolabeler
-  # pull_request:
-  #   # Only following types are handled by the action, but one can default to all as well
-  #   types: [opened, reopened, synchronize]
-  # # pull_request_target event is required for autolabeler to support PRs from forks
-  # # pull_request_target:
-  # #   types: [opened, reopened, synchronize]
-
-permissions:
-  contents: read
+      - main  # Adjust to your default branch
 
 jobs:
-  update_release_draft:
-    permissions:
-      # write permission is required to create a github release
-      contents: write
-      # write permission is required for autolabeler
-      # otherwise, read permission is required at least
-      pull-requests: write
+  release:
+    name: Create Release
     runs-on: ubuntu-latest
-    steps:
-      # (Optional) GitHub Enterprise requires GHE_HOST variable set
-      #- name: Set GHE_HOST
-      #  run: |
-      #    echo "GHE_HOST=${GITHUB_SERVER_URL##https:\/\/}" >> $GITHUB_ENV
 
-      # Drafts your next Release notes as Pull Requests are merged into "master"
-      - uses: release-drafter/release-drafter@v6
-        # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
-        # with:
-        #   config-name: my-config.yml
-        #   disable-autolabeler: true
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Date Version and Get Latest Tag
+        id: version_info
+        run: |
+          # Get the current date in YYYY.M.D format
+          DATE_VERSION=$(date +'%Y.%m.%d')
+
+          # Get the latest tag and check if it follows the format YYYY.M.D.x
+          LATEST_TAG=$(git tag -l "v$DATE_VERSION.*" | sort -V | tail -n 1)
+
+          # If there are no tags for today, start with 1, otherwise increment the last tag
+          if [ -z "$LATEST_TAG" ]; then
+            VERSION_NUMBER=1
+          else
+            # Extract the number from the last tag and increment
+            VERSION_NUMBER=$(echo $LATEST_TAG | sed -E 's/.*\.(.*)/\1/' | awk '{print $1 + 1}')
+          fi
+
+          # Construct the new version
+          NEW_VERSION="v$DATE_VERSION.$VERSION_NUMBER"
+          
+          echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Create a Release
+        uses: release-drafter/release-drafter@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Use your custom token here
+        with:
+          tag: ${{ env.NEW_VERSION }}  # New tag with incremented version
+          name: Release ${{ env.NEW_VERSION }}  # Release name with the version
+          prerelease: false
+          publish: false  # Keep as draft
+          commitish: ${{ github.sha }}
+
+      - name: Generate Release Notes
+        uses: release-drafter/release-drafter@v6
+        with:
+          token: ${{ secrets.GIT_TOKEN }}  # Pass the token as "with.token"
+          # No custom configuration file specified, using defaults
+
+
 
 
 # name: CI/CD Pipeline
