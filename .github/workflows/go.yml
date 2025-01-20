@@ -13,7 +13,7 @@ jobs:
     steps:
       # Checkout the repository
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       # Set up date-based versioning and get the latest tag
       - name: Set up Date Version and Get Latest Tag
