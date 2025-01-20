@@ -11,9 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the repository
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
+      # Set up date-based versioning and get the latest tag
       - name: Set up Date Version and Get Latest Tag
         id: version_info
         run: |
@@ -23,36 +25,40 @@ jobs:
           # Get the latest tag and check if it follows the format YYYY.M.D.x
           LATEST_TAG=$(git tag -l "v$DATE_VERSION.*" | sort -V | tail -n 1)
 
-          # If there are no tags for today, start with 1, otherwise increment the last tag
+          # If no tags found, start with 1, otherwise increment the last tag
           if [ -z "$LATEST_TAG" ]; then
             VERSION_NUMBER=1
           else
-            # Extract the number from the last tag and increment
+            # Extract the number from the last tag and increment it
             VERSION_NUMBER=$(echo $LATEST_TAG | sed -E 's/.*\.(.*)/\1/' | awk '{print $1 + 1}')
           fi
 
-          # Construct the new version
+          # Construct the new version based on date and incremented number
           NEW_VERSION="v$DATE_VERSION.$VERSION_NUMBER"
           
+          # Output the version as environment variables
           echo "DATE_VERSION=$DATE_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Create a Release
+      # Create a release with the dynamically generated version
+      - name: Create Release
         uses: release-drafter/release-drafter@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Use your custom token here
         with:
-          tag: ${{ env.NEW_VERSION }}  # New tag with incremented version
-          name: Release ${{ env.NEW_VERSION }}  # Release name with the version
+          config-name: release-drafter.yml  # Custom configuration file if needed
+          tag: ${{ env.NEW_VERSION }}  # Use the newly generated version
+          name: Release ${{ env.NEW_VERSION }}  # Use the new version in the release name
           prerelease: false
-          publish: false  # Keep as draft
+          publish: false  # Keep the release as a draft
           commitish: ${{ github.sha }}
 
+      # Generate release notes with categories and change descriptions
       - name: Generate Release Notes
         uses: release-drafter/release-drafter@v6
         with:
-          token: ${{ secrets.GIT_TOKEN }}  # Pass the token as "with.token"
-          # No custom configuration file specified, using defaults
+          config-name: release-drafter.yml
+          token: ${{ secrets.GIT_TOKEN }}  # Use your GitHub token for authentication
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}  # Pass the GitHub token to the environment
 
 
 
