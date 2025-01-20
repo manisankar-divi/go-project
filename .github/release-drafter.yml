@@ -1,10 +1,9 @@
-# .github/release.yaml
 template: |
   ## Changelog
   $CHANGES
-  
-name-template: 'Release v$NEXT_PATCH_VERSION'
-tag-template: 'v$NEXT_PATCH_VERSION'
+
+name-template: 'Release v$DATE_VERSION'
+tag-template: 'v$DATE_VERSION'
 categories:
   - title: New Features 🎉
     labels:
@@ -20,4 +19,15 @@ categories:
       - '*'
 change-template: '- $TITLE (#$NUMBER) @${AUTHOR}'
 no-changes-template: '- No changes'
-draft: true
+
+# Version format: v<Year>.<Month>.<Patch>
+version-template: 'v$YEAR.$MONTH.$PATCH'
+
+version-resolver:
+  major: { labels: [] }
+  minor: { labels: [] }
+  patch: { labels: [] }
+  default: 'patch'
+
+# Optional: Increment the patch version automatically
+increment-version: true
